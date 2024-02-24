@@ -1,25 +1,17 @@
 import { Request, Response } from 'express';
-import SongModel, { Song } from '../models/song-model'
-
-
-interface Statistics {
-  totalSongs: number;
-  totalArtists: number;
-  totalAlbums: number;
-  totalGenres: number;
-  songsInGenres: { [key: string]: number };
-  songsByArtists: { [key: string]: number };
-  albumsByArtists: { [key: string]: Set<string> }; 
-  songsInAlbums: { [key: string]: number };
-}
-
+import SongModel from '../models/song-model'
 
 class SongsController {
   
-
   getAllSongs = async (req: Request, res: Response) => {
     try {
-      const songs = await SongModel.find();
+      const createdBy = req.params.username;
+      let query: any = {};
+
+      if (createdBy) {
+        query.createdBy = createdBy;
+      }
+      const songs = await SongModel.find(query);
       res.json(songs);
     } catch (error) {
       res.status(500).json({ message: 'Internal server error' });
@@ -27,7 +19,7 @@ class SongsController {
   };
 
   addSong = async (req: Request, res: Response) => {
-    const { title, artist, album, genre } = req.body;
+  
     try {
       const newSong = new SongModel(req.body);
       const savedSong = await newSong.save();
@@ -91,36 +83,47 @@ class SongsController {
   
   generateStatistics = async (req: Request, res: Response) => {
     try {
-      const totalSongs = await SongModel.countDocuments();
-      const totalArtists = (await SongModel.distinct('artist')).length;
-      const totalAlbums = (await SongModel.distinct('album')).length;
-      const totalGenres = (await SongModel.distinct('genre')).length;
-  
+      const createdBy = req.params.username
+      let match: any = {};
+      
+      if (createdBy) {
+        match.createdBy = createdBy;
+      }
+
+      const totalSongs = await SongModel.countDocuments(match);
+      const totalArtists = (await SongModel.distinct('artist', match)).length;
+      const totalAlbums = (await SongModel.distinct('album', match)).length;
+      const totalGenres = (await SongModel.distinct('genre', match)).length;
+
       const genreCounts = await SongModel.aggregate([
+        { $match: match },
         { $group: { _id: '$genre', count: { $sum: 1 } } }
       ]);
-  
+
       const artistAlbumCounts = await SongModel.aggregate([
+        { $match: match },
         { $group: { _id: { artist: '$artist', album: '$album' }, count: { $sum: 1 } } }
       ]);
-  
+
       const albumSongCounts = await SongModel.aggregate([
+        { $match: match },
         { $group: { _id: '$album', count: { $sum: 1 } } }
       ]);
-  
+
       const genreSongCounts = await SongModel.aggregate([
+        { $match: match },
         { $group: { _id: '$genre', count: { $sum: 1 } } }
       ]);
-  
+
       const artistSongCounts = await SongModel.aggregate([
+        { $match: match },
         { $group: { _id: '$artist', count: { $sum: 1 } } }
       ]);
-  
+
       // Additional statistics
-      const favoriteSongsCount = await SongModel.countDocuments({ isFavorite: true });
-      const totalUniqueArtistsWithMultipleAlbums = artistAlbumCounts.filter(artist => artist.count > 1).length;
-      const totalUniqueGenresWithMultipleSongs = genreSongCounts.filter(genre => genre.count > 1).length;
-  
+      const favoriteSongsCount = await SongModel.countDocuments({ ...match, isFavorite: true });
+
+      // Return the statistics
       res.status(200).json({
         totalSongs,
         totalArtists,
@@ -131,19 +134,12 @@ class SongsController {
         albumSongCounts,
         genreSongCounts,
         artistSongCounts,
-        favoriteSongsCount,
-        totalUniqueArtistsWithMultipleAlbums,
-        totalUniqueGenresWithMultipleSongs
+        favoriteSongsCount
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   }
-  
-
- 
-  
-  
 
   }
   
