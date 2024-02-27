@@ -5,7 +5,8 @@ import connectDB from './db/connection';
 import songRoute from './routers/song-route'
 import userRoute from './routers/user-route'
 const app: Application = express();
-
+import * as dotenv from 'dotenv';
+dotenv.config();
 // Express Middlewares
 app.use(helmet());
 app.use(cors());
@@ -19,7 +20,7 @@ app.use('/users', userRoute);
 const port = process.env.PORT || 3001;
 const start = async()=>{
   try {
-    await connectDB('mongodb+srv://abrhamzewdu2119:Md12345678,@cluster0.umpmxm8.mongodb.net/?retryWrites=true&w=majority')
+    await connectDB(process.env.MONGO_URI)
     app.listen(port, () => {
       console.log(`Server is listening on port ${port}`);
     });
