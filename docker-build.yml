@@ -1,0 +1,31 @@
+name: Docker Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+
+      - name: Build Docker image
+        run: |
+          docker build -t your-docker-username/your-image-name .
+          docker push your-docker-username/your-image-name
+
+      - name: Set up Docker
+        uses: docker/setup-docker@v1
+
+      - name: Deploy Docker image
+        run: |
+          docker run -d -p 3000:3000 --env-file ./.env your-docker-username/your-image-name

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import SongModel from '../models/song-model'
+import SongModel from '../models/song-model';
 
 class SongsController {
   
@@ -12,7 +12,7 @@ class SongsController {
         query.createdBy = createdBy;
       }
       const songs = await SongModel.find(query);
-      res.json(songs);
+      res.status(200).json(songs);
     } catch (error) {
       res.status(500).json({ message: 'Internal server error' });
     }
@@ -41,7 +41,7 @@ class SongsController {
       if (!updatedSong) {
         return res.status(404).json({ message: 'Song not found' });
       }
-      res.json({ message: 'Song updated successfully', song: updatedSong });
+      res.status(200).json({ message: 'Song updated successfully', song: updatedSong });
     } catch (error) {
       res.status(400).json({ message: 'Failed to update song' });
     }
@@ -54,7 +54,7 @@ class SongsController {
       if (!deletedSong) {
         return res.status(404).json({ message: 'Song not found' });
       }
-      res.json({ message: 'Song deleted successfully' });
+      res.status(200).json({ message: 'Song deleted successfully' });
     } catch (error) {
       res.status(400).json({ message: 'Failed to delete song' });
     }
@@ -141,6 +141,6 @@ class SongsController {
     }
   }
 
-  }
+}
   
 export default new SongsController();
